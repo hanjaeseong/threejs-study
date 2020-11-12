@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        body {
+            /* set margin to 0 and overflow to hidden, to go fullscreen */
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+    <script src="../lib/three_down.js"></script>
+    <script src="../lib/stats.js"></script>
+    <script src="../lib/dat.gui.js"></script>
+    <script src="../lib/TrackballControls.js"></script>
+    <script>
+        class App{
+            constructor(){
+                // debugger;
+                this.stats  = initStats();
+                this.scene = new THREE.Scene();
+                
+                this.camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 1000);
+                this.camera.position.x = -20;
+                this.camera.position.y = 25;
+                this.camera.position.z = 20;
+                this.camera.lookAt(this.scene.position);
+                this.scene.add(this.camera);
+
+
+                this.renderer = new THREE.WebGLRenderer();
+                this.renderer.setClearColor(new THREE.Color(0xEEEEEE));
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                debugger;
+                this.renderer.shadowMap.enabled = true;
+                this.renderer.shadowMap.Type = 2;
+
+                var webgl_output = document.createElement("div");
+                document.body.appendChild(webgl_output);
+                webgl_output.appendChild(this.renderer.domElement);                
+                
+                var statsDiv = document.createElement("div");
+                document.body.appendChild(statsDiv);
+                statsDiv.appendChild(this.stats.domElement);
+
+                this.trackballControls = initTrackballControls(this.camera, this.renderer);
+                this.clock = new THREE.Clock();
+
+                var axesHelper = new THREE.AxesHelper(60);
+                this.scene.add(axesHelper);                
+                
+                var ambientLight = new THREE.AmbientLight(0x0c0c0c);//주변광
+                this.scene.add(ambientLight);
+
+                var spotLight = new THREE.SpotLight({color:0xFFFFFF});
+                spotLight.position.set(-40, 60, -30);
+                spotLight.castShadow = true;
+                this.scene.add(spotLight);
+                
+
+
+                
+                new Plane(this.scene, 0xffffff, 60, 40, 1, 1).add(0,0,0,-90,0,0);
+
+
+                this.cube = new Cube(this.scene);
+                
+                this.cube.add();
+
+                var controler = new Controler();
+                this.controlPoints = [];
+                this.controlPoints.push(new Controler(3,6,-3));
+                this.controlPoints.push(new Controler(-3,6,-3));
+                this.controlPoints.push(new Controler(-3,0,-3));
+                this.controlPoints.push(new Controler(3,0,-3));
+                this.controlPoints.push(new Controler(3,6,3));
+                this.controlPoints.push(new Controler(-3,6,3));
+                this.controlPoints.push(new Controler(-3,0,3));
+                this.controlPoints.push(new Controler(3,0,3));
+
+                var gui = new dat.GUI();
+
+                gui.add( new Clone(this.scene, this.cube), 'clone');
+
+                for(var i=0; i<this.controlPoints.length; i++){
+                    var folder = gui.addFolder('Vertice_'+i);
+                    folder.add(this.controlPoints[i], 'x', -10, 10);
+                    folder.add(this.controlPoints[i], 'y', -10, 10);
+                    folder.add(this.controlPoints[i], 'z', -10, 10);
+                }                
+
+                this.scaleControler = new Controler(1,1,1);
+
+                var scaleFolder = gui.addFolder('Scale');
+                scaleFolder.add(this.scaleControler, 'x',1,10);
+                scaleFolder.add(this.scaleControler, 'y',1,10);
+                scaleFolder.add(this.scaleControler, 'z',1,10);
+
+                this.positionControler = new Controler();
+
+                var positionFolder = gui.addFolder('Position');
+                positionFolder.add(this.positionControler, 'x',-10,10);
+                positionFolder.add(this.positionControler, 'y',-10,10);
+                positionFolder.add(this.positionControler, 'z',-10,10);
+
+                this.rotationControler = new Controler();
+
+                var rotationFolder = gui.addFolder('Rotation');
+                rotationFolder.add(this.rotationControler, 'x',-10,10);
+                rotationFolder.add(this.rotationControler, 'y',-10,10);
+                rotationFolder.add(this.rotationControler, 'z',-10,10);
+
+                this.translateControler = new Controler();
+
+                var translateFolder = gui.addFolder('translate');
+                translateFolder.add(this.translateControler, 'x',-10,10);
+                translateFolder.add(this.translateControler, 'y',-10,10);
+                translateFolder.add(this.translateControler, 'z',-10,10);
+
+                window.requestAnimationFrame(this.render.bind(this));
+            }
+
+            render(){
+                this.stats.update();
+                this.trackballControls.update(this.clock.getDelta());
+
+                var editVertices = [];
+
+                for(var i=0; i<this.controlPoints.length; i++){
+                    editVertices[i] = new THREE.Vector3(this.controlPoints[i].x,this.controlPoints[i].y,this.controlPoints[i].z);
+                }
+
+                // debugger;
+                this.cube.render(editVertices, this.scaleControler, this.positionControler, this.rotationControler, this.translateControler);
+                // this.cube.add();
+
+                // this.geom.vertices = editVertices;
+                // this.geom.computeFaceNormals();
+                
+                
+                window.requestAnimationFrame(this.render.bind(this));
+                this.renderer.render(this.scene, this.camera);
+            }
+        }
+
+        class Clone{
+            constructor(scene, cube){
+                this.scene = scene;
+                this.cube = cube;
+            }
+
+            clone(){
+                debugger;
+                this.scene;
+                let cloneGeometry = this.cube.geom.clone();
+                let cloneMaterial = [
+                    new THREE.MeshLambertMaterial({opacity:0.6, color:0xff44ff, transparent:true}),
+                    new THREE.MeshBasicMaterial({color:0x000000, wireframe:true})
+                ];
+                // this.geom = new THREE.Geometry();
+                // this.geom.vertices = vertices;
+                // this.geom.faces = faces;
+                // this.geom.computeFaceNormals();
+
+                let cloneMesh = createMultiMaterialObject(cloneGeometry, cloneMaterial);
+
+                cloneMesh.children.forEach(function(obj){
+                    if(obj.material instanceof THREE.MeshLambertMaterial) obj.castShadow = true;
+                });
+
+                cloneMesh.translateX(-8);
+                cloneMesh.translateZ(8);
+
+                this.scene.add(cloneMesh);
+            }
+        }
+
+        class Plane{
+            constructor(scene,color, width=1, height=1, widthSegment=1, HeightSegment=1){
+                this.scene = scene;
+                this.color = color;
+                this.width = width;
+                this.height = height;
+                this.widthSegment = widthSegment;
+                this.HeightSegment = HeightSegment;
+            }
+
+            add(x=0,y=0,z=0,rtX=0, rtY=0, rtZ=0){
+                var planeGeometry = new THREE.PlaneGeometry(this.width,this.height,this.widthSegment,this.HeightSegment);
+                var planeMaterial = new THREE.MeshLambertMaterial({color : this.color});
+                var plane = new THREE.Mesh(planeGeometry, planeMaterial);
+
+                plane.position.x = x;
+                plane.position.y = y;
+                plane.position.z = z;
+
+                plane.rotation.x = rtX*Math.PI/180;
+                plane.rotation.y = rtY*Math.PI/180;
+                plane.rotation.z = rtZ*Math.PI/180;
+
+                plane.receiveShadow = true;
+
+                this.scene.add(plane);
+            }
+        }
+
+        class Controler{
+            constructor(x=0,y=0,z=0){
+                this.x  = x;
+                this.y = y;
+                this.z = z;
+            }
+        }
+
+        class Cube{
+            constructor(scene){
+                this.scene = scene;
+                var vertices = [
+                    new THREE.Vector3(3,6,-3),
+                    new THREE.Vector3(-3,6,-3),//1
+                    new THREE.Vector3(-3,0,-3),//2
+                    new THREE.Vector3(3,0,-3),
+                    new THREE.Vector3(3,6,3),
+                    new THREE.Vector3(-3,6,3), //5
+                    new THREE.Vector3(-3,0,3),
+                    new THREE.Vector3(3,0,3)
+                ];
+
+                var faces = [
+                    // this.camera.position.x = -20;
+                    // this.camera.position.y = 25;
+                    // this.camera.position.z = 20;
+                    // 카메라 위치에서 큐브는 앞, 우, 상이 보임(카메라에서 반시계)
+                    // 카메라 위치에서 뒤, 좌, 하는 안보임(카메라에서 시계)
+                    //앞 - 시계
+                    new THREE.Face3(2,5,1),
+                    new THREE.Face3(6,5,2),
+                    //뒤
+                    new THREE.Face3(7,3,0),
+                    new THREE.Face3(4,7,0),
+                    //좌
+                    new THREE.Face3(3,2,1),
+                    new THREE.Face3(3,1,0),
+                    //우
+                    new THREE.Face3(5,6,4),
+                    new THREE.Face3(6,7,4),
+                    //상
+                    new THREE.Face3(1,5,0),
+                    new THREE.Face3(5,4,0),
+                    //하
+                    new THREE.Face3(3,6,2),
+                    new THREE.Face3(7,6,3)
+                ];
+                this.materials = [
+                    new THREE.MeshLambertMaterial({opacity:0.6, color:0x44ff44, transparent:true}),
+                    new THREE.MeshBasicMaterial({color:0x000000, wireframe:true})
+                ];
+                this.geom = new THREE.Geometry();
+                this.geom.vertices = vertices;
+                this.geom.faces = faces;
+                this.geom.computeFaceNormals();
+
+                this.mesh = createMultiMaterialObject(this.geom, this.materials);
+
+                this.mesh.children.forEach(function(obj){
+                    if(obj.material instanceof THREE.MeshLambertMaterial) obj.castShadow = true;
+                });
+            }
+
+            add(){
+                this.scene.add(this.mesh);
+            }
+
+            createMultiMaterialObject( geometry, materials ) {
+
+                var group = new THREE.Object3D();
+                
+                for ( var i = 0, l = materials.length; i < l; i ++ ) {
+                    group.add( new THREE.Mesh( geometry, materials[ i ] ) );
+                }
+
+                return group;
+            }
+
+            render(editVertices, scaleControler, positionControler, rotationControler, translateControler){
+                this.mesh.children.forEach(function(obj){
+                    // debugger;
+                    obj.geometry.vertices = editVertices;
+                    // obj.geometry.verticesNeedUpdate = true;
+                    // obj.geometry.verticesNeedUpdate = true;
+                    obj.geometry.elementsNeedUpdate = true;
+                    // obj.geometry.morphTargetsNeedUpdate = true;
+                    // obj.geometry.uvsNeedUpdate = true;
+                    // obj.geometry.normalsNeedUpdate = true;
+                    // obj.geometry.colorsNeedUpdate = true;
+                    // obj.geometry.tangentsNeedUpdate = true;
+                    obj.geometry.computeFaceNormals();
+
+                    debugger;
+                    obj.scale.set(scaleControler.x,scaleControler.y,scaleControler.z);
+                    obj.position.set(positionControler.x, positionControler.y, positionControler.z);
+                    obj.rotation.set(rotationControler.x, rotationControler.y, rotationControler.z);
+                    // obj.translate.set(translateControler.x, translateControler.y, translateControler.z);
+                    obj.translateX(translateControler.x);
+                    obj.translateY(translateControler.y);
+                    obj.translateZ(translateControler.z);
+
+
+
+                });
+                
+            }
+        }
+
+        function initStats(){
+            var stats = new Stats();
+            stats.setMode(0);
+            stats.domElement.style.position = 'absolute';
+            stats.domElement.left = '0px';
+            stats.domElement.top = '0px';
+            return stats;
+        }
+
+        function initTrackballControls(camera, renderer) {
+            var trackballControls = new THREE.TrackballControls(camera, renderer.domElement);
+            trackballControls.rotateSpeed = 1.0;
+            trackballControls.zoomSpeed = 1.2;
+            trackballControls.panSpeed = 0.8;
+            trackballControls.noZoom = false;
+            trackballControls.noPan = false;
+            trackballControls.staticMoving = true;
+            trackballControls.dynamicDampingFactor = 0.3;
+            trackballControls.keys = [65, 83, 68];
+
+            return trackballControls;
+        }
+
+        function createMultiMaterialObject( geometry, materials ) {
+
+            var group = new THREE.Object3D();
+
+            for ( var i = 0, l = materials.length; i < l; i ++ ) {
+                group.add( new THREE.Mesh( geometry, materials[ i ] ) );
+            }
+
+            return group;
+        }
+
+
+        window.onload = function(){
+            new App();
+        };
+    </script>
+</head>
+<body>    
+</body>
+</html>
