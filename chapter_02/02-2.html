@@ -33,7 +33,7 @@
                 this.renderer = new THREE.WebGLRenderer();
                 this.renderer.setClearColor(new THREE.Color(0xEEEEEE));
                 this.renderer.setSize(window.innerWidth, window.innerHeight);
-                debugger;
+                // debugger;
                 this.renderer.shadowMap.enabled = true;
                 this.renderer.shadowMap.Type = 2;
 
@@ -152,7 +152,7 @@
             }
 
             clone(){
-                debugger;
+                // debugger;
                 this.scene;
                 let cloneGeometry = this.cube.geom.clone();
                 let cloneMaterial = [
@@ -173,6 +173,9 @@
                 cloneMesh.translateX(-8);
                 cloneMesh.translateZ(8);
 
+                // 메쉬에 이름을 부여하고 해당 이름의 객체를 씬에서 삭제후 추가.
+                cloneMesh.name = 'clone';
+                this.scene.remove(this.scene.getObjectByName("clone"));
                 this.scene.add(cloneMesh);
             }
         }
@@ -298,7 +301,7 @@
                     // obj.geometry.tangentsNeedUpdate = true;
                     obj.geometry.computeFaceNormals();
 
-                    debugger;
+                    // debugger;
                     obj.scale.set(scaleControler.x,scaleControler.y,scaleControler.z);
                     obj.position.set(positionControler.x, positionControler.y, positionControler.z);
                     obj.rotation.set(rotationControler.x, rotationControler.y, rotationControler.z);
