@@ -115,30 +115,30 @@
                 var positionY = positionFolder.add(this.controler, 'positionY',-10,10);
                 var positionZ = positionFolder.add(this.controler, 'positionZ',-10,10);
 
-                var callbackFuncX =  function(value){                            
-                    this.cube.mesh.children.forEach(function(obj){
-                        obj.position.x = value;
-                    });
-                }
+                // var callbackFuncX =  function(value){                            
+                //     this.cube.mesh.children.forEach(function(obj){
+                //         obj.position.x = value;
+                //     });
+                // }
                 
-                var callbackFuncY =  function(value){                            
-                    this.cube.mesh.children.forEach(function(obj){
-                        obj.position.y = value;
-                    });
-                }
+                // var callbackFuncY =  function(value){                            
+                //     this.cube.mesh.children.forEach(function(obj){
+                //         obj.position.y = value;
+                //     });
+                // }
 
-                var callbackFuncZ =  function(value){                            
-                    this.cube.mesh.children.forEach(function(obj){
-                        obj.position.z = value;
-                    });
-                }
+                // var callbackFuncZ =  function(value){                            
+                //     this.cube.mesh.children.forEach(function(obj){
+                //         obj.position.z = value;
+                //     });
+                // }
 
                 positionX.listen();
-                positionX.onChange(callbackFuncX.bind(this));
+                // positionX.onChange(callbackFuncX.bind(this));
                 positionY.listen();
-                positionY.onChange(callbackFuncY.bind(this));
+                // positionY.onChange(callbackFuncY.bind(this));
                 positionZ.listen();
-                positionZ.onChange(callbackFuncZ.bind(this));                
+                // positionZ.onChange(callbackFuncZ.bind(this));                
 
                 //translate는 X,Y,Z를 조절하자마자 변경되는것이 아니라 하단에 translate를 눌러야 변경됨.
                 var translateFolder = gui.addFolder('translate');
@@ -146,6 +146,8 @@
                 translateFolder.add(this.controler, 'translateY',-10,10);
                 translateFolder.add(this.controler, 'translateZ',-10,10);
                 translateFolder.add(this.controler, 'translate');
+
+                gui.add(this.controler, "visible");
 
                 window.addEventListener("resize", this.onResize.bind(this), false);
                 this.onResize();
@@ -382,7 +384,9 @@
 
                     // debugger;
                     obj.scale.set(controler.scaleX,controler.scaleY,controler.scaleZ);
+                    obj.position.set(controler.positionX, controler.positionY, controler.positionZ);
                     obj.rotation.set(controler.rotationX, controler.rotationY, controler.rotationZ);
+                    obj.visible = controler.visible;
                 });
                 
             }
