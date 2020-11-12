@@ -72,7 +72,7 @@
                 
                 this.cube.add();
 
-                var controler = new Controler();
+                
                 this.controlPoints = [];
                 this.controlPoints.push(new Controler(3,6,-3));
                 this.controlPoints.push(new Controler(-3,6,-3));
@@ -94,33 +94,58 @@
                     folder.add(this.controlPoints[i], 'z', -10, 10);
                 }                
 
-                this.scaleControler = new Controler(1,1,1);
-
+                this.controler = new Controler2(this.cube);
+                
                 var scaleFolder = gui.addFolder('Scale');
-                scaleFolder.add(this.scaleControler, 'x',1,10);
-                scaleFolder.add(this.scaleControler, 'y',1,10);
-                scaleFolder.add(this.scaleControler, 'z',1,10);
-
-                this.positionControler = new Controler();
-
-                var positionFolder = gui.addFolder('Position');
-                positionFolder.add(this.positionControler, 'x',-10,10);
-                positionFolder.add(this.positionControler, 'y',-10,10);
-                positionFolder.add(this.positionControler, 'z',-10,10);
-
-                this.rotationControler = new Controler();
+                scaleFolder.add(this.controler, 'scaleX',1,10);
+                scaleFolder.add(this.controler, 'scaleY',1,10);
+                scaleFolder.add(this.controler, 'scaleZ',1,10);
 
                 var rotationFolder = gui.addFolder('Rotation');
-                rotationFolder.add(this.rotationControler, 'x',-10,10);
-                rotationFolder.add(this.rotationControler, 'y',-10,10);
-                rotationFolder.add(this.rotationControler, 'z',-10,10);
+                rotationFolder.add(this.controler, 'rotationX',-10,10);
+                rotationFolder.add(this.controler, 'rotationY',-10,10);
+                rotationFolder.add(this.controler, 'rotationZ',-10,10);
 
-                this.translateControler = new Controler();
+                /*
+                    position은 단독으로 쓰이지만 tanslate에 의해서 position이 변경되기도함으로
+                    위 2가지 경우 gui position변수에 onChange이벤트를 걸어서 큐브 위치를 변경한다.
+                */
+                var positionFolder = gui.addFolder('Position');
+                var positionX = positionFolder.add(this.controler, 'positionX',-10,10);
+                var positionY = positionFolder.add(this.controler, 'positionY',-10,10);
+                var positionZ = positionFolder.add(this.controler, 'positionZ',-10,10);
 
+                var callbackFuncX =  function(value){                            
+                    this.cube.mesh.children.forEach(function(obj){
+                        obj.position.x = value;
+                    });
+                }
+                
+                var callbackFuncY =  function(value){                            
+                    this.cube.mesh.children.forEach(function(obj){
+                        obj.position.y = value;
+                    });
+                }
+
+                var callbackFuncZ =  function(value){                            
+                    this.cube.mesh.children.forEach(function(obj){
+                        obj.position.z = value;
+                    });
+                }
+
+                positionX.listen();
+                positionX.onChange(callbackFuncX.bind(this));
+                positionY.listen();
+                positionY.onChange(callbackFuncY.bind(this));
+                positionZ.listen();
+                positionZ.onChange(callbackFuncZ.bind(this));                
+
+                //translate는 X,Y,Z를 조절하자마자 변경되는것이 아니라 하단에 translate를 눌러야 변경됨.
                 var translateFolder = gui.addFolder('translate');
-                translateFolder.add(this.translateControler, 'x',-10,10);
-                translateFolder.add(this.translateControler, 'y',-10,10);
-                translateFolder.add(this.translateControler, 'z',-10,10);
+                translateFolder.add(this.controler, 'translateX',-10,10);
+                translateFolder.add(this.controler, 'translateY',-10,10);
+                translateFolder.add(this.controler, 'translateZ',-10,10);
+                translateFolder.add(this.controler, 'translate');
 
                 window.addEventListener("resize", this.onResize.bind(this), false);
                 this.onResize();
@@ -146,7 +171,7 @@
                 }
 
                 // debugger;
-                this.cube.render(editVertices, this.scaleControler, this.positionControler, this.rotationControler, this.translateControler);
+                this.cube.render(editVertices, this.controler);
                 // this.cube.add();
 
                 // this.geom.vertices = editVertices;
@@ -226,7 +251,48 @@
             constructor(x=0,y=0,z=0){
                 this.x  = x;
                 this.y = y;
-                this.z = z;
+                this.z = z;                
+            }
+        }
+
+        class Controler2{
+            constructor(cube){
+                this.scaleX = 1;
+                this.scaleY = 1;
+                this.scaleZ = 1;
+                
+                this.positionX = 0;
+                this.positionY = 0;
+                this.positionZ = 0;
+
+                this.rotationX = 0;
+                this.rotationY = 0;
+                this.rotationZ = 0;
+
+                this.translateX = 0;
+                this.translateY = 0;
+                this.translateZ = 0;
+
+                this.visible = true;
+                this.cube = cube;
+
+                
+            }
+            
+            translate(){
+                debugger;
+
+                for(var i=0; i<this.cube.mesh.children.length; i++){
+                    let mesh = this.cube.mesh.children[i];
+
+                    mesh.translateX(this.translateX);
+                    mesh.translateY(this.translateY);
+                    mesh.translateZ(this.translateZ);
+
+                    this.positionX = mesh.position.x;
+                    this.positionY = mesh.position.y;
+                    this.positionZ = mesh.position.z;
+                }
             }
         }
 
@@ -300,11 +366,11 @@
                 return group;
             }
 
-            render(editVertices, scaleControler, positionControler, rotationControler, translateControler){
+            render(editVertices, controler){
                 this.mesh.children.forEach(function(obj){
                     // debugger;
                     obj.geometry.vertices = editVertices;
-                    // obj.geometry.verticesNeedUpdate = true;
+
                     // obj.geometry.verticesNeedUpdate = true;
                     obj.geometry.elementsNeedUpdate = true;
                     // obj.geometry.morphTargetsNeedUpdate = true;
@@ -315,16 +381,8 @@
                     obj.geometry.computeFaceNormals();
 
                     // debugger;
-                    obj.scale.set(scaleControler.x,scaleControler.y,scaleControler.z);
-                    obj.position.set(positionControler.x, positionControler.y, positionControler.z);
-                    obj.rotation.set(rotationControler.x, rotationControler.y, rotationControler.z);
-                    // obj.translate.set(translateControler.x, translateControler.y, translateControler.z);
-                    obj.translateX(translateControler.x);
-                    obj.translateY(translateControler.y);
-                    obj.translateZ(translateControler.z);
-
-
-
+                    obj.scale.set(controler.scaleX,controler.scaleY,controler.scaleZ);
+                    obj.rotation.set(controler.rotationX, controler.rotationY, controler.rotationZ);
                 });
                 
             }
