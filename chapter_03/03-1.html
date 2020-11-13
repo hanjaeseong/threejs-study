@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        body {
+            /* set margin to 0 and overflow to hidden, to go fullscreen */
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+    <script src="../lib/three_r122.js"></script>
+    <script src="../lib/stats.js"></script>
+    <script src="../lib/dat.gui.js"></script>
+    <script>
+        class App{
+            constructor(){
+                //씬 생성
+                this.scene = new THREE.Scene();
+
+                //통계
+                this.stats = new Stats();
+                this.stats.domElement.style.position = "absolute";
+
+                let stats_output = document.createElement("div");
+                stats_output.appendChild(this.stats.domElement);
+                document.body.appendChild(stats_output);
+
+                //카메라 
+                this.camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 1000);
+                this.camera.position.set(-50,50,50);
+                this.camera.lookAt(this.scene.position);
+
+                this.scene.add(this.camera);
+
+                //렌더러
+                this.renderer = new THREE.WebGLRenderer();
+                this.renderer.setClearColor(new THREE.Color(0.9,0.9,0.9));
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.renderer.shadowMap.enabled = true;
+                this.renderer.shadowMap.type = 2;
+                
+                let webgl_output = document.createElement("div");
+                webgl_output.appendChild(this.renderer.domElement);
+                document.body.appendChild(webgl_output);
+
+                //조명
+                this.spotLight = new THREE.SpotLight();
+                this.spotLight.color = new THREE.Color(1,1,1);
+                this.spotLight.position.set(-100,100,-100);
+                this.spotLight.castShadow = true;
+
+                this.scene.add(this.spotLight);
+
+                this.ambientLight = new THREE.AmbientLight(0x0c0c0c);
+                this.scene.add(this.ambientLight);
+
+                //판
+                this.planeGeo = new THREE.PlaneGeometry(80,60, 1,1);
+                this.planeMat = new THREE.MeshLambertMaterial();
+                this.planeMat.color = new THREE.Color(0.9,0.9,0.9);
+                this.plane = new THREE.Mesh(this.planeGeo, this.planeMat);
+                this.plane.rotation.x = -90 * Math.PI / 180;
+                this.plane.receiveShadow = true;
+
+                this.scene.add(this.plane);
+
+                //큐브
+                this.cubeGeo = new THREE.BoxGeometry(8,8,8);
+                this.cubeMat = new THREE.MeshLambertMaterial();
+                this.cubeMat.color = new THREE.Color(0.9,0,0);
+                this.cube = new THREE.Mesh(this.cubeGeo, this.cubeMat);
+                this.cube.position.set(-30,6,0);
+                this.cube.castShadow = true;
+
+                this.scene.add(this.cube);
+
+                //구
+                // debugger;
+                this.sphereGeo = new THREE.SphereGeometry(5,20,20);
+                this.sphereMat = new THREE.MeshLambertMaterial();
+                this.sphereMat.color = new THREE.Color(0,0,0.9);
+                this.sphere = new THREE.Mesh(this.sphereGeo, this.sphereMat);
+                this.sphere.position.set(15,6,0);
+                this.sphere.castShadow = true;
+
+                this.scene.add(this.sphere);
+
+                this.step = 0;
+
+                let gui = new dat.GUI();      
+                this.ctrl = new Controler();
+
+                //1번 온체인지이벤트를 이용한 방법
+                // let cbFunc1 = function(value){
+                //     this.ambientLight.color = new THREE.Color(value);
+                // }
+                // gui.addColor(this.ctrl, "ambientColor").onChange(cbFunc1.bind(this));
+
+                //2아래 reder 메소드 안에 자연광색변경 부분과 동시 사용가능
+                gui.addColor(this.ctrl, "ambientColor");
+                gui.add(this.ctrl, "diableSpotLight");
+
+
+                window.requestAnimationFrame(this.render.bind(this));
+            }
+
+            render(){
+                //통계
+                this.stats.update();
+
+                //자연광 색변경
+                // debugger;
+                this.ambientLight.color = new THREE.Color(this.ctrl.ambientColor);
+                
+                //스팟라이트 적용여부
+                this.spotLight.visible = !this.ctrl.diableSpotLight;
+
+                //큐브 회전
+                //아래 2종류 코딩이 결과가 다름...
+                this.cube.rotateX(0.02);
+                this.cube.rotateY(0.02);
+                this.cube.rotateZ(0.02);
+                // this.cube.rotation.x += 0.02;
+                // this.cube.rotation.y += 0.02;
+                // this.cube.rotation.z += 0.02;
+                
+
+                //구 핑퐁
+                this.sphere.position.x = Math.cos(this.step * Math.PI / 180) * 18;
+                this.sphere.position.y = Math.abs(Math.sin(this.step * Math.PI / 180)) * 18 + 6;
+                
+
+                this.renderer.render(this.scene, this.camera);
+
+                this.step += 2;
+                window.requestAnimationFrame(this.render.bind(this));
+            }
+        }
+
+        class Controler{
+            constructor(){
+                this.ambientColor = 0x0c0c0c;
+                this.diableSpotLight = false;
+            }
+        }
+
+        window.onload = function(){
+            new App();
+        };
+    </script>
+</head>
+<body>    
+</body>
+</html>
