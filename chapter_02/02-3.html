@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        body {
+            /* set margin to 0 and overflow to hidden, to go fullscreen */
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+    <script src="../lib/three_r122.js"></script>
+    <script src="../lib/stats.js"></script>
+    <script src="../lib/dat.gui.js"></script>
+    <script src="../lib/TrackballControls.js"></script>
+    <script>
+        class App{
+            constructor(){
+                
+                this.scene = new THREE.Scene();
+
+                this.camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 1000);
+                this.camera.position.x = -200;
+                this.camera.position.y = 80;
+                this.camera.position.z = 120;
+                
+
+                this.scene.add(this.camera);
+
+                this.renderer = new THREE.WebGLRenderer();
+                this.renderer.setClearColor(new THREE.Color(0xEEEEEE));
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+
+                //this.scene.add(this.renderer);
+                this.stats = new Stats();
+                this.stats.domElement.style.position = "absolute";
+                const stats_output = document.createElement("div");
+                stats_output.appendChild(this.stats.domElement);
+                document.body.appendChild(stats_output);
+
+                const webgl_output = document.createElement("div");
+                webgl_output.appendChild(this.renderer.domElement);
+                document.body.appendChild(webgl_output);
+
+                // debugger;
+                let planeGeometry = new THREE.PlaneGeometry(180,180,1,1);
+                let planeMaterial = new THREE.MeshLambertMaterial();
+                planeMaterial.color = new THREE.Color('rgb(255,255,255)');
+                let plane = new THREE.Mesh(planeGeometry, planeMaterial);
+                plane.rotation.x = -90 * Math.PI / 180;
+
+                this.scene.add(plane);
+                this.camera.lookAt(plane.position);
+                
+                
+                let spotLight = new THREE.SpotLight();
+                spotLight.color = new THREE.Color('rgb(255,255,255)');
+                spotLight.position.set(-150, 60, -50);                
+                this.scene.add(spotLight);
+
+                let directionalLight = new THREE.DirectionalLight(0xffffff, 0.7);
+                directionalLight.position.set(-150, 60, -50);  
+                // this.scene.add(directionalLight);
+
+                let ambientLight = new THREE.AmbientLight();
+                ambientLight.color = new THREE.Color('rgb(12, 12, 12)');
+                this.scene.add(ambientLight);
+
+                let boxGeometry = new THREE.BoxGeometry(4,4,4,10,10,10);
+
+                for(var i=0; i<plane.geometry.parameters.height/5; i++){ //z축
+                    for(var j=0; j<plane.geometry.parameters.width/5; j++){ //x축
+                        
+                        var rnd = Math.random() * 0.75 + 0.25;
+                        let boxMaterial = new THREE.MeshLambertMaterial({color: new THREE.Color(rnd,0,0)});
+                        let box = new THREE.Mesh(boxGeometry, boxMaterial);
+
+                        box.position.x = -(plane.geometry.parameters.width/2)+0+(j*5)+3;
+                        box.position.z = -(plane.geometry.parameters.height/2)+0+(i*5)+2.5;
+                        box.position.y = 2;
+                        
+                        this.scene.add(box);
+                    }
+                }                
+                // debugger;
+
+                let sphereGeo = new THREE.SphereGeometry(2);
+                let sphereMat = new THREE.MeshLambertMaterial({color : new THREE.Color(0,1,0)});
+                this.sphere = new THREE.Mesh(sphereGeo, sphereMat);
+                this.scene.add(this.sphere);
+
+                let gui = new dat.GUI();
+                this.ctrl = new Controler(this.scene, this.camera);
+                var cameraType =  gui.add(this.ctrl, "cameraType");
+
+                cameraType.listen();
+
+                gui.add(this.ctrl, "changeType");
+
+                this.step = 0;
+                
+
+                window.requestAnimationFrame(this.render.bind(this));
+            }
+
+            render(){
+                this.stats.update();
+
+                this.camera = this.ctrl.camera;
+
+                ++this.step;
+                //var xAxes = 0;
+                var xAxes = Math.sin(this.step * Math.PI / 180) * 100;
+                var vtr = new THREE.Vector3(0, 10, xAxes);
+                debugger;
+                this.camera.lookAt(vtr);
+                this.sphere.position.copy(vtr);
+
+                
+
+
+                this.renderer.render(this.scene, this.camera);
+                window.requestAnimationFrame(this.render.bind(this));
+            }
+        }
+
+        class Controler{
+            constructor(scene, camera){
+                this.scene = scene;
+                this.camera = camera;
+                this.cameraType = "Perspectiv";
+            }
+
+            changeType(){
+                // console.log(this);
+                // debugger;
+                if(this.camera instanceof THREE.PerspectiveCamera){
+                    this.camera = new THREE.OrthographicCamera(window.innerWidth / -16, window.innerWidth / 16, window.innerHeight / 16, window.innerHeight / -16, -200, 500);
+                    this.camera.position.x = -200;
+                    this.camera.position.y = 80;
+                    this.camera.position.z = 120;
+                    this.camera.lookAt(this.scene.position);
+                    // console.log("PerspectiveCamera");
+                    this.cameraType = "Orthographic"
+                }
+                else{
+
+                    this.camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 1000);
+                    this.camera.position.x = -200;
+                    this.camera.position.y = 80;
+                    this.camera.position.z = 120;
+                    this.camera.lookAt(this.scene.position);
+
+                    // console.log("not PerspectiveCamera");
+                    this.cameraType = "Perspectiv"
+                }
+            }
+        }
+
+        window.onload = function(){
+            new App();
+        };
+    </script>
+</head>
+<body>    
+</body>
+</html>
