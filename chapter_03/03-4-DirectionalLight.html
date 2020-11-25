@@ -75,7 +75,7 @@
                 // debugger;
                 this.sphereGeo = new THREE.SphereGeometry(4,20,20);
                 this.sphereMat = new THREE.MeshLambertMaterial();
-                this.sphereMat.color = new THREE.Color(0,0,0.9);
+                this.sphereMat.color = new THREE.Color('rgbd(0,0,100)');
                 this.sphere = new THREE.Mesh(this.sphereGeo, this.sphereMat);
                 // this.sphere.position.set(20,0,2);
                 this.sphere.position.x = 20;
@@ -85,22 +85,26 @@
 
                 this.scene.add(this.sphere);
 
-                // spot광원
-                this.spotLight = new THREE.SpotLight();
-                this.spotLight.color = new THREE.Color(1,1,1);
-                this.spotLight.position.set(-100,100,-100);
-                this.spotLight.castShadow = true;
-                this.spotLight.target = this.plane;
-                this.spotLight.shadow.mapSize.height = 512;
-                this.spotLight.shadow.mapSize.width = 512;
-                //  this.spotLight.shadowCameraVisible = true;
-                // debugger;
+                // Directional 광원
+                this.directionalLight = new THREE.DirectionalLight();
+                this.directionalLight.color = new THREE.Color(1,1,1);
+                this.directionalLight.position.set(-100,100,-100);
+                this.directionalLight.castShadow = true;
+                this.directionalLight.shadow.camera.near = 2;
+                this.directionalLight.shadow.camera.far = 200;
+                this.directionalLight.shadow.camera.left = -50;
+                this.directionalLight.shadow.camera.right = 50;
+                this.directionalLight.shadow.camera.top = 50;
+                this.directionalLight.shadow.camera.bottom = -50;
+                this.directionalLight.shadow.mapSize.height = 2024;
+                this.directionalLight.shadow.mapSize.width = 2024;
+                this.directionalLight.target = this.plane;
 
-                this.spotLightHelper = new THREE.SpotLightHelper( this.spotLight);
-                this.cameraHelper = new THREE.CameraHelper( this.spotLight.shadow.camera);
+                this.directionalLightHelper = new THREE.DirectionalLightHelper( this.directionalLight);
+                this.cameraHelper = new THREE.CameraHelper( this.directionalLight.shadow.camera);
 
-                this.scene.add(this.spotLight);
-                this.scene.add(this.spotLightHelper);
+                this.scene.add(this.directionalLight);
+                this.scene.add(this.directionalLightHelper);
                 this.scene.add(this.cameraHelper);
 
                 // point광원 위치 확인용 구체
@@ -129,14 +133,15 @@
 
                 //2아래 reder 메소드 안에 자연광색변경 부분과 동시 사용가능
                 gui.addColor(this.ctrl, "ambientColor");
-                gui.add(this.ctrl, "angle", 0, 1);
-                gui.add(this.ctrl, "intensity", 0, 2);
-                gui.add(this.ctrl, "distance", 0, 100);
+                gui.addColor(this.ctrl, "pointColor");
+                // gui.add(this.ctrl, "angle", 0, 1);
+                gui.add(this.ctrl, "intensity", 0, 5);
+                // gui.add(this.ctrl, "distance", 0, 200);
                 gui.add(this.ctrl, "target", ["plane", "cube", "sphere"]);
-                gui.add(this.ctrl, "stopMovingLight");
-                gui.add(this.ctrl, "penumbra", 0, 1);
-                gui.add(this.ctrl, "decay", 1, 2);
-                gui.add(this.ctrl, "focus", 0, 1);
+                // gui.add(this.ctrl, "stopMovingLight");
+                // gui.add(this.ctrl, "penumbra", 0, 1);
+                // gui.add(this.ctrl, "decay", 1, 2);
+                // gui.add(this.ctrl, "focus", 0, 1);
 
                 
                 
@@ -164,35 +169,31 @@
                 //통계
                 this.stats.update();
 
-                this.spotLightHelper.update();
+                this.directionalLightHelper.update();
                 this.cameraHelper.update();
 
                 //자연광 색변경
                 this.ambientLight.color = new THREE.Color(this.ctrl.ambientColor);
+                //태양광 색
+                this.directionalLight.color = new THREE.Color(this.ctrl.pointColor);
+                //태양광 세기
+                this.directionalLight.intensity = this.ctrl.intensity;
+                //태양광 거리
+                // this.directionalLight.distance = this.ctrl.distance;
                 
-                //스팟라이트 적용여부
-                this.spotLight.visible = !this.ctrl.diableSpotLight;
-                //스팟라이트 각
-                this.spotLight.angle = this.ctrl.angle;
-                //스팟라이트 세기
-                this.spotLight.intensity = this.ctrl.intensity;
-                //스팟라이트 거리
-                this.spotLight.distance = this.ctrl.distance;
-                
-                //스팟라이트 타겟
                 if(this.ctrl.target == "plane")
-                    this.spotLight.target = this.plane;
+                    this.directionalLight.target = this.plane;
                 else if(this.ctrl.target == "cube")
-                    this.spotLight.target = this.cube;
+                    this.directionalLight.target = this.cube;
                 else if(this.ctrl.target == "sphere")
-                    this.spotLight.target = this.sphere;
+                    this.directionalLight.target = this.sphere;
 
                 //스팟라이트 그림자 블러처리?
-                this.spotLight.penumbra = this.ctrl.penumbra;
+                // this.spotLight.penumbra = this.ctrl.penumbra;
                 //크면 빛의도달거리가 짧아 지고 작으면 빛의도달거리가 길어짐
-                this.spotLight.decay = this.ctrl.decay;
+                // this.spotLight.decay = this.ctrl.decay;
                 //스팟라이트 그림자 포커스
-                this.spotLight.shadow.focus = this.ctrl.focus;
+                // this.spotLight.shadow.focus = this.ctrl.focus;
 
                 //없어진 속성
                 // this.spotLight.exponent = this.ctrl.exponent;
@@ -222,7 +223,7 @@
                 }
                 this.pointLSphere.position.y = 20;
 
-                this.spotLight.position.copy(this.pointLSphere.position);
+                this.directionalLight.position.copy(this.pointLSphere.position);
 
                 this.renderer.render(this.scene, this.camera);
 
@@ -234,15 +235,15 @@
 
         class Controler{
             constructor(){
-                this.ambientColor = 0x0c0c0c;
-                this.angle = 0.5;
-                this.intensity = 1;
+                this.ambientColor = 0x1c1c1c;
+                this.pointColor = 0xff5808;
+                this.intensity = 0.5;
                 this.distance = 0;
                 this.target = "plane";
-                this.stopMovingLight = false;
-                this.penumbra = 0;
-                this.decay = 2;
-                this.focus = 1;
+                // this.stopMovingLight = false;
+                // this.penumbra = 0;
+                // this.decay = 2;
+                // this.focus = 1;
                 
 
 
