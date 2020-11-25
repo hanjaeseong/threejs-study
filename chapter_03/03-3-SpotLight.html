@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        body {
+            /* set margin to 0 and overflow to hidden, to go fullscreen */
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+    <script src="../lib/three_r122.js"></script>
+    <script src="../lib/stats.js"></script>
+    <script src="../lib/dat.gui.js"></script>
+    <script>
+        class App{
+            constructor(){
+                window.addEventListener("resize", this.onResize.bind(this),false);
+
+                //씬 생성
+                this.scene = new THREE.Scene();
+
+                //통계
+                this.stats = new Stats();
+                this.stats.domElement.style.position = "absolute";
+
+                let stats_output = document.createElement("div");
+                stats_output.appendChild(this.stats.domElement);
+                document.body.appendChild(stats_output);
+
+                //카메라 
+                this.camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 1000);
+                this.camera.position.set(-25,30,25);
+                //this.camera.position.set(10,90,0);
+                // this.camera.lookAt(this.scene.position);
+                this.camera.lookAt(new THREE.Vector3(10, 0, 0));
+
+                this.scene.add(this.camera);
+
+                //렌더러
+                this.renderer = new THREE.WebGLRenderer();
+                this.renderer.setClearColor(new THREE.Color(0.9,0.9,0.9));
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.renderer.shadowMap.enabled = true;
+                this.renderer.shadowMap.type = 2;
+                
+                let webgl_output = document.createElement("div");
+                webgl_output.appendChild(this.renderer.domElement);
+                document.body.appendChild(webgl_output);
+
+                //판
+                this.planeGeo = new THREE.PlaneGeometry(60,20, 30,30);
+                this.planeMat = new THREE.MeshLambertMaterial();
+                this.planeMat.color = new THREE.Color(0.9,0.9,0.9);
+                this.plane = new THREE.Mesh(this.planeGeo, this.planeMat);
+                this.plane.rotation.x = -90 * Math.PI / 180;
+                this.plane.position.x = 15;
+                this.plane.receiveShadow = true;
+
+                this.scene.add(this.plane);
+
+                //큐브
+                this.cubeGeo = new THREE.BoxGeometry(4,4,4);
+                this.cubeMat = new THREE.MeshLambertMaterial();
+                this.cubeMat.color = new THREE.Color(0.9,0,0);
+                this.cube = new THREE.Mesh(this.cubeGeo, this.cubeMat);
+                this.cube.position.set(-4,3,0);
+                this.cube.castShadow = true;
+
+                this.scene.add(this.cube);
+
+                //구
+                // debugger;
+                this.sphereGeo = new THREE.SphereGeometry(4,20,20);
+                this.sphereMat = new THREE.MeshLambertMaterial();
+                this.sphereMat.color = new THREE.Color(0,0,0.9);
+                this.sphere = new THREE.Mesh(this.sphereGeo, this.sphereMat);
+                // this.sphere.position.set(20,0,2);
+                this.sphere.position.x = 20;
+                this.sphere.position.y = 0;
+                this.sphere.position.z = 2;
+                this.sphere.castShadow = true;
+
+                this.scene.add(this.sphere);
+
+                // spot광원
+                this.spotLight = new THREE.SpotLight();
+                this.spotLight.color = new THREE.Color(1,1,1);
+                this.spotLight.position.set(-100,100,-100);
+                this.spotLight.castShadow = true;
+                this.spotLight.target = this.plane;
+                //  this.spotLight.shadowCameraVisible = true;
+                // debugger;
+
+                this.spotLightHelper = new THREE.SpotLightHelper( this.spotLight);
+                this.cameraHelper = new THREE.CameraHelper( this.spotLight.shadow.camera);
+
+                this.scene.add(this.spotLight);
+                this.scene.add(this.spotLightHelper);
+                this.scene.add(this.cameraHelper);
+
+                // point광원 위치 확인용 구체
+                this.pointLSphereGeo = new THREE.SphereGeometry(0.2,20,20);
+                this.pointLSphereMat = new THREE.MeshBasicMaterial();
+                this.pointLSphereMat.color = new THREE.Color("orange");
+                this.pointLSphere = new THREE.Mesh(this.pointLSphereGeo, this.pointLSphereMat);
+                this.pointLSphere.position.set(0,5,0);
+                // this.pointLSphere.castShadow = true;
+
+                this.scene.add(this.pointLSphere);
+
+                this.ambientLight = new THREE.AmbientLight(0x0c0c0c);
+                this.scene.add(this.ambientLight);
+
+                
+
+                let gui = new dat.GUI();      
+                this.ctrl = new Controler();
+
+                //1번 온체인지이벤트를 이용한 방법
+                // let cbFunc1 = function(value){
+                //     this.ambientLight.color = new THREE.Color(value);
+                // }
+                // gui.addColor(this.ctrl, "ambientColor").onChange(cbFunc1.bind(this));
+
+                //2아래 reder 메소드 안에 자연광색변경 부분과 동시 사용가능
+                gui.addColor(this.ctrl, "ambientColor");
+                gui.add(this.ctrl, "angle", 0, 1);
+                gui.add(this.ctrl, "intensity", 0, 2);
+                gui.add(this.ctrl, "distance", 0, 100);
+                gui.add(this.ctrl, "target", ["plane", "cube", "sphere"]);
+                gui.add(this.ctrl, "stopMovingLight");
+                gui.add(this.ctrl, "penumbra", 0, 1);
+                gui.add(this.ctrl, "decay", 1, 2);
+                gui.add(this.ctrl, "focus", 0, 1);
+
+                
+                
+                //없어진 속성
+                // gui.add(this.ctrl, "exponent", 0, 100);
+                // gui.add(this.ctrl, "onlyShadow");
+                // gui.add(this.ctrl, "shadowDarkness", 0, 1);
+
+                this.step = 0;
+                this.step2 = 0;
+
+
+
+                window.requestAnimationFrame(this.render.bind(this));
+            }
+
+            onResize(){
+                debugger;
+                this.camera.aspect = window.innerWidth/window.innerHeight;
+                this.camera.updateProjectionMatrix();
+                this.renderer.setSize(window.innerWidth,window.innerHeight)
+            }
+
+            render(){
+                //통계
+                this.stats.update();
+
+                this.spotLightHelper.update();
+                this.cameraHelper.update();
+
+                //자연광 색변경
+                this.ambientLight.color = new THREE.Color(this.ctrl.ambientColor);
+                
+                //스팟라이트 적용여부
+                this.spotLight.visible = !this.ctrl.diableSpotLight;
+                //스팟라이트 각
+                this.spotLight.angle = this.ctrl.angle;
+                //스팟라이트 세기
+                this.spotLight.intensity = this.ctrl.intensity;
+                //스팟라이트 거리
+                this.spotLight.distance = this.ctrl.distance;
+                
+                //스팟라이트 타겟
+                if(this.ctrl.target == "plane")
+                    this.spotLight.target = this.plane;
+                else if(this.ctrl.target == "cube")
+                    this.spotLight.target = this.cube;
+                else if(this.ctrl.target == "sphere")
+                    this.spotLight.target = this.sphere;
+
+                //스팟라이트 그림자 블러처리?
+                this.spotLight.penumbra = this.ctrl.penumbra;
+                //크면 빛의도달거리가 짧아 지고 작으면 빛의도달거리가 길어짐
+                this.spotLight.decay = this.ctrl.decay;
+                //스팟라이트 그림자 포커스
+                this.spotLight.shadow.focus = this.ctrl.focus;
+
+                //없어진 속성
+                // this.spotLight.exponent = this.ctrl.exponent;
+                // this.spotLight.onlyShadow = this.ctrl.onlyShadow;
+                // this.spotLight.shadowDarkness = this.ctrl.shadowDarkness;
+
+
+                //큐브 회전
+                //아래 2종류 코딩이 결과가 다름...
+                this.cube.rotateX(0.02);
+                this.cube.rotateY(0.02);
+                this.cube.rotateZ(0.02);
+                // this.cube.rotation.x += 0.02;
+                // this.cube.rotation.y += 0.02;
+                // this.cube.rotation.z += 0.02;
+                
+
+                //구 핑퐁
+                this.sphere.position.x = Math.cos(this.step * Math.PI / 180) * 10+23;
+                this.sphere.position.y = Math.abs(Math.sin(this.step * Math.PI / 180)) * 10 + 6;
+
+                //pointLight움직임.
+                if(!this.ctrl.stopMovingLight){
+                    this.pointLSphere.position.x = Math.sin(this.step2 * Math.PI / 180) * 25+15;
+                    this.pointLSphere.position.z = Math.sin(this.step2*2 * Math.PI / 180) * 8;     
+                    this.step2 += 0.8;      
+                }
+                this.pointLSphere.position.y = 20;
+
+                this.spotLight.position.copy(this.pointLSphere.position);
+
+                this.renderer.render(this.scene, this.camera);
+
+                this.step += 2;
+                
+                window.requestAnimationFrame(this.render.bind(this));
+            }
+        }
+
+        class Controler{
+            constructor(){
+                this.ambientColor = 0x0c0c0c;
+                this.angle = 0.5;
+                this.intensity = 1;
+                this.distance = 0;
+                this.target = "plane";
+                this.stopMovingLight = false;
+                this.penumbra = 0;
+                this.decay = 2;
+                this.focus = 1;
+                
+
+
+                //없어진 속성값
+                // this.exponent = 30;
+                // this.onlyShadow = false;
+                //this.shadowDarkness = 0.5;
+            }
+        }
+
+        window.onload = function(){
+            new App();
+        };
+    </script>
+</head>
+<body>    
+</body>
+</html>
