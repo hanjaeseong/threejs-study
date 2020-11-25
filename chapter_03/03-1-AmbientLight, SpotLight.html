@@ -46,6 +46,8 @@
                 webgl_output.appendChild(this.renderer.domElement);
                 document.body.appendChild(webgl_output);
 
+                window.addEventListener("resize", this.onResize.bind(this), false);
+
                 //조명
                 this.spotLight = new THREE.SpotLight();
                 this.spotLight.color = new THREE.Color(1,1,1);
@@ -105,6 +107,12 @@
 
 
                 window.requestAnimationFrame(this.render.bind(this));
+            }
+
+            onResize(){
+                this.camera.aspect = window.innerWidth/ window.innerHeight;
+                this.camera.updateProjectionMatrix();
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
             }
 
             render(){
