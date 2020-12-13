@@ -31,10 +31,6 @@
                 this.renderer.setSize(window.innerWidth, window.innerHeight);
                 this.renderer.shadowMap.enabled = true;
 
-                
-                debugger;
-
-
                 this.texture = new THREE.TextureLoader().load( "../textures/grasslight-big.jpg" );
                 this.texture.wrapS = THREE.RepeatWrapping;
                 this.texture.wrapT = THREE.RepeatWrapping;
@@ -87,7 +83,7 @@
                 this.camera = new THREE.PerspectiveCamera(45, window.innerWidth/ window.innerHeight, 0.5, 1000);
                 this.camera.position.copy(new THREE.Vector3(-20,40,80)) ;
                 this.camera.lookAt(this.plane.position);
-                debugger;
+                
                 this.ambientLight = new THREE.AmbientLight();
                 this.ambientLight.color = new THREE.Color("rgb(80,80,80)");
                 // this.ambientLight.intensity = 1;
@@ -195,6 +191,12 @@
                 directionalgui.add(this.ctrl, "dir_shadow_height", 500,3000);
                 directionalgui.add(this.ctrl, "dir_shadow_width", 500,3000);
 
+                const hemiSphereGui = this.gui.addFolder("HemiSphereLight");
+                hemiSphereGui.addColor(this.ctrl, "hemi_sky_color");
+                hemiSphereGui.addColor(this.ctrl, "hemi_ground_color");
+                hemiSphereGui.add(this.ctrl, "hemi_intensity",0, 2);
+                hemiSphereGui.add(this.ctrl, "hemi_y",-10, 100);
+
                 window.requestAnimationFrame(this.render.bind(this));      
             }
 
@@ -264,7 +266,7 @@
                 else if(this.ctrl.directional_target == "sphere")
                     this.directionalLight.target = this.sphere;
                 
-                debugger;
+                
                 this.directionalLight.shadow.camera.near = this.ctrl.dir_near;
                 this.directionalLight.shadow.camera.far = this.ctrl.dir_far;
                 this.directionalLight.shadow.camera.left = -this.ctrl.dir_width;
@@ -276,7 +278,12 @@
 
                 this.directionalLight.shadow.mapSize.height = this.ctrl.dir_shadow_height;
                 this.directionalLight.shadow.mapSize.width = this.ctrl.dir_shadow_width;
-                
+
+                debugger;
+                this.hemiLight.color = new THREE.Color(this.ctrl.hemi_sky_color);
+                this.hemiLight.groundColor = new THREE.Color(this.ctrl.hemi_ground_color);
+                this.hemiLight.intensity = this.ctrl.hemi_intensity;                
+                this.hemiLight.position.set(0, this.ctrl.hemi_y, 0);
 
                 this.renderer.render(this.scene, this.camera);
                 window.requestAnimationFrame(this.render.bind(this));
@@ -308,6 +315,12 @@
                 this.dir_height = 50;
                 this.dir_shadow_height = 2024;
                 this.dir_shadow_width = 2024;
+
+                //HemisphereLight(0x0000ff, 0x00ff00, 0.6);
+                this.hemi_sky_color = 0x0000ff;
+                this.hemi_ground_color = 0x00ff00;
+                this.hemi_intensity = 0.6;
+                this.hemi_y = 10;
             }
         }
 
