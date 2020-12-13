@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        body {
+            /* set margin to 0 and overflow to hidden, to go fullscreen */
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+    <script src="../lib/three_r122.js"></script>
+    <script src="../lib/stats.js"></script>
+    <script src="../lib/dat.gui.js"></script>
+    <!-- <script type="module" src="../lib/OrbitControls.js"></script> -->
+    <!-- <script> -->
+    <script type="module">
+        import { OrbitControls } from '../lib/OrbitControls.js';
+        import { Lensflare, LensflareElement } from '../lib/Lensflare.js';
+        
+        class App{
+            constructor(){
+                this.scene = new THREE.Scene();
+                
+                //Fog설정.
+                this.scene.fog = new THREE.Fog(0xaaaaaa, 50, 200);
+
+                this.renderer = new THREE.WebGLRenderer();
+                // this.renderer.setClearColor(new THREE.Color("rgb(255,255,255)"));
+                this.renderer.setClearColor(new THREE.Color(0xaaaaff));
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.renderer.shadowMap.enabled = true;
+
+                //텍스터 생성
+                this.texture = new THREE.TextureLoader().load( "../textures/grasslight-big.jpg" );
+                this.texture.wrapS = THREE.RepeatWrapping;
+                this.texture.wrapT = THREE.RepeatWrapping;
+                this.texture.repeat.set( 4, 4 );
+
+
+
+                //평면 설정(텍스쳐 사용)
+                this.planeGeo = new THREE.PlaneGeometry(1000,200, 30,30);
+                this.planeMat = new THREE.MeshLambertMaterial();
+                // this.planeMat.color = new THREE.Color("rgb(230,230,230)");
+                this.planeMat.map = this.texture;
+                this.plane = new THREE.Mesh(this.planeGeo, this.planeMat);
+
+                 this.scene.add(this.plane);
+                // this.planeGeo = new THREE.PlaneGeometry(60,20, 30,30);
+                // this.planeMat = new THREE.MeshLambertMaterial();
+                // this.planeMat.color = new THREE.Color(0.9,0.9,0.9);
+                // this.plane = new THREE.Mesh(this.planeGeo, this.planeMat);
+                this.plane.rotation.x = -90 * Math.PI / 180;
+                // this.plane.position.x = ;
+                // this.plane.position.y = 15;
+                // this.plane.position.z = -15;
+                this.plane.receiveShadow = true;
+
+                // this.scene.add(this.plane);
+
+                //직육면체 
+                this.cubeGeo = new THREE.BoxGeometry(7,7,7);
+                this.cubeMat = new THREE.MeshLambertMaterial();
+                this.cubeMat.color = new THREE.Color(0xff3333);
+                this.cube = new THREE.Mesh(this.cubeGeo, this.cubeMat);
+                this.cube.position.x = -25;
+                this.cube.position.y = 5;
+                this.cube.position.z = -10;
+                this.cube.castShadow = true;
+
+                this.scene.add(this.cube);
+
+                //구체
+                this.sphereGeo = new THREE.SphereGeometry(7,20,20);
+                this.sphereMat = new THREE.MeshLambertMaterial();
+                this.sphereMat.color = new THREE.Color(0x7777ff);
+                this.sphere = new THREE.Mesh(this.sphereGeo, this.sphereMat);
+                this.sphere.position.x = 25;
+                this.sphere.position.y = 7;
+                this.sphere.position.z = -10;
+                this.sphere.castShadow = true;
+
+                this.scene.add(this.sphere);
+
+
+                //카메라
+                this.camera = new THREE.PerspectiveCamera(45, window.innerWidth/ window.innerHeight, 0.5, 1000);
+                this.camera.position.copy(new THREE.Vector3(-20,40,80)) ;
+                this.camera.lookAt(this.plane.position);
+                
+                //자연광원
+                this.ambientLight = new THREE.AmbientLight();
+                this.ambientLight.color = new THREE.Color("rgb(80,80,80)");
+                // this.ambientLight.intensity = 1;
+                this.scene.add(this.ambientLight);
+
+                //스팟광원
+                this.spotLight = new THREE.SpotLight();
+                this.spotLight.color = new THREE.Color("rgb(200,200,200)");
+                this.spotLight.position.x = -40;
+                this.spotLight.position.y = 25;
+                this.spotLight.position.z = -50;
+                // this.spotLight.castShadow = true;
+                this.spotLight.intensity = 3;
+                this.spotLight.distance = 180;
+                this.spotLight.angle = 1.5;
+                this.spotLight.penumbra = 1;
+                this.spotLight.shadow.mapSize.width =1512;
+                this.spotLight.shadow.mapSize.height =1512;
+                this.spotLight.target = this.plane;
+
+                this.spotLightHelper = new THREE.SpotLightHelper( this.spotLight);
+                // this.spotLightCameraHelper = new THREE.CameraHelper( this.spotLight.shadow.camera);
+
+                this.scene.add(this.spotLightHelper);
+                // this.scene.add(this.spotLightCameraHelper);
+                this.scene.add(this.spotLight);
+
+                // Directional 광원
+                this.directionalLight = new THREE.DirectionalLight();
+                this.directionalLight.color = new THREE.Color("rgb(100,100,100)");
+                this.directionalLight.position.set(-40,25,-50);
+                this.directionalLight.castShadow = true;
+                this.directionalLight.shadow.camera.near = 2;
+                this.directionalLight.shadow.camera.far = 200;
+                this.directionalLight.shadow.camera.left = -80;
+                this.directionalLight.shadow.camera.right = 80;
+                this.directionalLight.shadow.camera.top = 80;
+                this.directionalLight.shadow.camera.bottom = -80;
+                this.directionalLight.shadow.mapSize.height = 2024;
+                this.directionalLight.shadow.mapSize.width = 2024;
+                this.directionalLight.intensity = 1;
+                this.directionalLight.target = this.plane;
+
+                this.directionalLightHelper = new THREE.DirectionalLightHelper( this.directionalLight);
+                this.directionalLightCameraHelper = new THREE.CameraHelper( this.directionalLight.shadow.camera);
+
+                this.scene.add(this.directionalLight);
+                this.scene.add(this.directionalLightHelper);
+                this.scene.add(this.directionalLightCameraHelper);
+
+                //HemisphereLight
+                this.hemiLight = new THREE.HemisphereLight(0x0000ff, 0x00ff00, 0.6);
+                this.hemiLight.position.set(0, 10, 0);
+                this.scene.add(this.hemiLight);
+
+                this.hemiLightHelper = new THREE.HemisphereLightHelper( this.hemiLight, 10 );
+                this.scene.add( this.hemiLightHelper );
+                
+                //PointLight
+                this.pointLight = new THREE.PointLight(0xffffff, 1.5, 2000);
+                this.pointLight.position.set(-40,25,-50);                
+
+                //렌즈플레어
+                this.textureFlare0 = new THREE.TextureLoader().load( "./picture/lensflare0.png" );
+                this.textureFlare3 = new THREE.TextureLoader().load( "./picture/lensflare3.png" );
+                this.lensFlareColor = new THREE.Color(0xffaacc);
+                // debugger;
+                this.lensFlare = new Lensflare();
+                this.lensFlare.addElement( new LensflareElement( this.textureFlare0, 350, 0, this.lensFlareColor ) );
+                this.lensFlare.addElement( new LensflareElement( this.textureFlare3, 60, 0.6 ) );
+                this.lensFlare.addElement( new LensflareElement( this.textureFlare3, 70, 0.7 ) );
+                this.lensFlare.addElement( new LensflareElement( this.textureFlare3, 120, 0.9 ) );
+                this.lensFlare.addElement( new LensflareElement( this.textureFlare3, 70, 1 ) );
+                this.pointLight.add(this.lensFlare);
+
+                this.scene.add(this.pointLight);
+
+
+
+
+                
+
+                this.stats = new Stats();
+                this.statsDiv = document.createElement("div");
+                document.body.appendChild(this.statsDiv);
+                this.stats.domElement.style.position = "absolute";
+                
+                this.statsDiv.appendChild(this.stats.domElement);
+
+                this.renderDiv = document.createElement("div");
+                document.body.appendChild(this.renderDiv);
+                this.renderDiv.appendChild(this.renderer.domElement);
+                
+                this.axesHelper =new THREE.AxesHelper(20);
+                this.scene.add(this.axesHelper);
+
+                this.controls = new OrbitControls( this.camera, this.renderer.domElement );
+                this.controls.update();
+
+                this.step = 0;
+
+                //Gui Controller
+                this.gui = new dat.GUI();
+                this.ctrl = new Controler();
+
+                const spotgui = this.gui.addFolder("SpotLight");
+                spotgui.add(this.ctrl, "spot_onoff");
+                spotgui.add(this.ctrl, "spothelper_onoff");
+                spotgui.add(this.ctrl, "spot_angle", 0, 3);
+                spotgui.add(this.ctrl, "spot_intensity", 0, 5);
+                spotgui.add(this.ctrl, "spot_distance", 0, 300);
+                spotgui.add(this.ctrl, "spot_target", ["plane", "cube", "sphere"]);                
+                spotgui.add(this.ctrl, "spot_penumbra", 0, 1);
+                spotgui.add(this.ctrl, "spot_decay", 1, 2);
+                spotgui.add(this.ctrl, "spot_focus", 0, 1);
+
+                const directionalgui = this.gui.addFolder("DirectionalLight");
+                directionalgui.add(this.ctrl, "directional_onoff");
+                directionalgui.add(this.ctrl, "directionalhelper_onoff");
+                directionalgui.addColor(this.ctrl, "directional_pointColor");
+                directionalgui.add(this.ctrl, "directional_intensity", 0, 5);
+                directionalgui.add(this.ctrl, "directional_target", ["plane", "cube", "sphere"]);
+
+                directionalgui.add(this.ctrl, "dir_near", 0,3);
+                directionalgui.add(this.ctrl, "dir_far", 10,300);
+                directionalgui.add(this.ctrl, "dir_width", 0,100);
+                directionalgui.add(this.ctrl, "dir_height", 0,100);
+                directionalgui.add(this.ctrl, "dir_shadow_height", 500,3000);
+                directionalgui.add(this.ctrl, "dir_shadow_width", 500,3000);
+
+                const hemiSphereGui = this.gui.addFolder("HemiSphereLight");
+                hemiSphereGui.addColor(this.ctrl, "hemi_sky_color");
+                hemiSphereGui.addColor(this.ctrl, "hemi_ground_color");
+                hemiSphereGui.add(this.ctrl, "hemi_intensity",0, 2);
+                hemiSphereGui.add(this.ctrl, "hemi_y",-10, 100);
+
+                window.requestAnimationFrame(this.render.bind(this));      
+            }
+
+            render(){
+                this.stats.update();
+
+                this.spotLightHelper.update();
+                // this.spotLightCameraHelper.update();
+
+                this.directionalLight.shadow.camera.updateMatrix()
+                this.directionalLightHelper.update();                
+                this.directionalLightCameraHelper.update();
+                // this.directionalLight.matrixAutoUpdate();/
+
+                this.hemiLightHelper.update();
+
+                this.controls.update();
+
+                this.cube.rotation.x = (this.step)*Math.PI/180;
+                this.cube.rotation.y = this.step*Math.PI/180;
+                this.cube.rotation.z = this.step*Math.PI/180;
+
+                this.sphere.position.x = 25 + Math.cos((this.step)*Math.PI/180) * 20;
+                this.sphere.position.y = 7 + Math.abs(Math.sin((this.step)*Math.PI/180)) * 10;
+                this.sphere.position.z = -10 + Math.cos((this.step)*Math.PI/180) * -10;
+
+                this.step+=1;
+
+                //스팟라이트 각
+                this.spotLight.angle = this.ctrl.spot_angle;
+                //스팟라이트 세기
+                this.spotLight.intensity = this.ctrl.spot_intensity;
+                //스팟라이트 거리
+                this.spotLight.distance = this.ctrl.spot_distance;
+                
+                //스팟라이트 타겟
+                if(this.ctrl.spot_target == "plane")
+                    this.spotLight.target = this.plane;
+                else if(this.ctrl.spot_target == "cube")
+                    this.spotLight.target = this.cube;
+                else if(this.ctrl.spot_target == "sphere")
+                    this.spotLight.target = this.sphere;
+
+                //스팟라이트 그림자 블러처리?
+                this.spotLight.penumbra = this.ctrl.spot_penumbra;
+                //크면 빛의도달거리가 짧아 지고 작으면 빛의도달거리가 길어짐
+                this.spotLight.decay = this.ctrl.spot_decay;
+                //스팟라이트 그림자 포커스
+                this.spotLight.shadow.focus = this.ctrl.spot_focus;
+                this.spotLight.visible = this.ctrl.spot_onoff;
+
+                this.spotLightHelper.visible = this.ctrl.spothelper_onoff;
+
+
+
+                this.directionalLight.visible = this.ctrl.directional_onoff;
+                this.directionalLightHelper.visible = this.ctrl.directionalhelper_onoff;
+                this.directionalLightCameraHelper.visible = this.ctrl.directionalhelper_onoff;
+                
+                this.directionalLight.color = new THREE.Color(this.ctrl.directional_pointColor);
+                this.directionalLight.intensity = this.ctrl.directional_intensity;
+
+                if(this.ctrl.directional_target == "plane")
+                    this.directionalLight.target = this.plane;
+                else if(this.ctrl.directional_target == "cube")
+                    this.directionalLight.target = this.cube;
+                else if(this.ctrl.directional_target == "sphere")
+                    this.directionalLight.target = this.sphere;
+                
+                
+                this.directionalLight.shadow.camera.near = this.ctrl.dir_near;
+                this.directionalLight.shadow.camera.far = this.ctrl.dir_far;
+                this.directionalLight.shadow.camera.left = -this.ctrl.dir_width;
+                this.directionalLight.shadow.camera.right = this.ctrl.dir_width;
+                this.directionalLight.shadow.camera.top = this.ctrl.dir_height;
+                this.directionalLight.shadow.camera.bottom = -this.ctrl.dir_height;
+                //위 directionalLight의 속성 변경을 적용시켜줌.
+                this.directionalLight.shadow.camera.updateProjectionMatrix();      
+
+                this.directionalLight.shadow.mapSize.height = this.ctrl.dir_shadow_height;
+                this.directionalLight.shadow.mapSize.width = this.ctrl.dir_shadow_width;
+
+                debugger;
+                this.hemiLight.color = new THREE.Color(this.ctrl.hemi_sky_color);
+                this.hemiLight.groundColor = new THREE.Color(this.ctrl.hemi_ground_color);
+                this.hemiLight.intensity = this.ctrl.hemi_intensity;                
+                this.hemiLight.position.set(0, this.ctrl.hemi_y, 0);
+
+                this.renderer.render(this.scene, this.camera);
+                window.requestAnimationFrame(this.render.bind(this));
+            }
+        }
+
+        class Controler{
+            constructor(){
+                this.spot_angle = 1.5;
+                this.spot_intensity = 3;
+                this.spot_distance = 180;
+                this.spot_target = "plane";
+                this.spot_onoff = true;
+                this.spot_penumbra = 0;
+                this.spot_decay = 2;
+                this.spot_focus = 1;
+                this.spothelper_onoff = false;
+
+
+                this.directional_onoff = true;
+                this.directionalhelper_onoff = false;
+                this.directional_pointColor = 0xff5808;
+                this.directional_intensity = 0.5;
+                this.directional_target = "plane";
+
+                this.dir_near = 2;
+                this.dir_far = 200;
+                this.dir_width = 50;
+                this.dir_height = 50;
+                this.dir_shadow_height = 2024;
+                this.dir_shadow_width = 2024;
+
+                //HemisphereLight(0x0000ff, 0x00ff00, 0.6);
+                this.hemi_sky_color = 0x0000ff;
+                this.hemi_ground_color = 0x00ff00;
+                this.hemi_intensity = 0.6;
+                this.hemi_y = 10;
+            }
+        }
+
+        window.onload = function(){
+            new App();
+        };
+    </script>
+</head>
+<body>    
+</body>
+</html>
