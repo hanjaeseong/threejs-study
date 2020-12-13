@@ -22,7 +22,8 @@
         class App{
             constructor(){
                 this.scene = new THREE.Scene();
-
+                
+                //Fog설정.
                 this.scene.fog = new THREE.Fog(0xaaaaaa, 50, 200);
 
                 this.renderer = new THREE.WebGLRenderer();
@@ -31,11 +32,13 @@
                 this.renderer.setSize(window.innerWidth, window.innerHeight);
                 this.renderer.shadowMap.enabled = true;
 
+                //텍스터 생성
                 this.texture = new THREE.TextureLoader().load( "../textures/grasslight-big.jpg" );
                 this.texture.wrapS = THREE.RepeatWrapping;
                 this.texture.wrapT = THREE.RepeatWrapping;
                 this.texture.repeat.set( 4, 4 );
 
+                //평면 설정(텍스쳐 사용)
                 this.planeGeo = new THREE.PlaneGeometry(1000,200, 30,30);
                 this.planeMat = new THREE.MeshLambertMaterial();
                 // this.planeMat.color = new THREE.Color("rgb(230,230,230)");
@@ -55,7 +58,7 @@
 
                 // this.scene.add(this.plane);
 
-
+                //직육면체 
                 this.cubeGeo = new THREE.BoxGeometry(7,7,7);
                 this.cubeMat = new THREE.MeshLambertMaterial();
                 this.cubeMat.color = new THREE.Color(0xff3333);
@@ -67,6 +70,7 @@
 
                 this.scene.add(this.cube);
 
+                //구체
                 this.sphereGeo = new THREE.SphereGeometry(7,20,20);
                 this.sphereMat = new THREE.MeshLambertMaterial();
                 this.sphereMat.color = new THREE.Color(0x7777ff);
@@ -79,16 +83,18 @@
                 this.scene.add(this.sphere);
 
 
-
+                //카메라
                 this.camera = new THREE.PerspectiveCamera(45, window.innerWidth/ window.innerHeight, 0.5, 1000);
                 this.camera.position.copy(new THREE.Vector3(-20,40,80)) ;
                 this.camera.lookAt(this.plane.position);
                 
+                //자연광원
                 this.ambientLight = new THREE.AmbientLight();
                 this.ambientLight.color = new THREE.Color("rgb(80,80,80)");
                 // this.ambientLight.intensity = 1;
                 this.scene.add(this.ambientLight);
 
+                //스팟광원
                 this.spotLight = new THREE.SpotLight();
                 this.spotLight.color = new THREE.Color("rgb(200,200,200)");
                 this.spotLight.position.x = -40;
@@ -102,7 +108,6 @@
                 this.spotLight.shadow.mapSize.width =1512;
                 this.spotLight.shadow.mapSize.height =1512;
                 this.spotLight.target = this.plane;
-
 
                 this.spotLightHelper = new THREE.SpotLightHelper( this.spotLight);
                 // this.spotLightCameraHelper = new THREE.CameraHelper( this.spotLight.shadow.camera);
@@ -134,7 +139,7 @@
                 this.scene.add(this.directionalLightHelper);
                 this.scene.add(this.directionalLightCameraHelper);
 
-
+                //HemisphereLight
                 this.hemiLight = new THREE.HemisphereLight(0x0000ff, 0x00ff00, 0.6);
                 this.hemiLight.position.set(0, 10, 0);
                 this.scene.add(this.hemiLight);
@@ -162,7 +167,7 @@
 
                 this.step = 0;
 
-
+                //Gui Controller
                 this.gui = new dat.GUI();
                 this.ctrl = new Controler();
 
